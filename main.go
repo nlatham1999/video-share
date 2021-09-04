@@ -4,6 +4,7 @@ import (
 	"os"
 	"net/http"
 
+	"video-share/routes"
 	"github.com/gin-gonic/gin"
     "github.com/gin-contrib/cors"
 )
@@ -26,6 +27,7 @@ func main() {
 	router.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.html", nil)
 	})
+	router.GET("/orders", routes.GetOrders)
 
 	router.Run(":" + port)
 }
