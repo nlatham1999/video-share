@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"net/http"
 
 	"main/routes"
 	"github.com/gin-gonic/gin"
@@ -20,8 +21,14 @@ func main() {
 	router.Use(gin.Logger())
 
     router.Use(cors.Default())
+	
+	router.LoadHTMLGlob("index.html")
 
 	
-	router.GET("/", routes.TempRequest)
+	router.GET("/test", routes.TempRequest)
+	router.GET("/", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "index.html", nil)
+	})
+
 	router.Run(":" + port)
 }
