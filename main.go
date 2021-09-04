@@ -4,7 +4,6 @@ import (
 	"os"
 	"net/http"
 
-	"main/routes"
 	"github.com/gin-gonic/gin"
     "github.com/gin-contrib/cors"
 )
@@ -13,9 +12,9 @@ func main() {
 
 	port := os.Getenv("PORT")
 
-	if port == "" {
-		port = "8000"
-	}
+	// if port == "" {
+	// 	port = "8000"
+	// }
 
 	router := gin.New()
 	router.Use(gin.Logger())
@@ -24,8 +23,6 @@ func main() {
 	
 	router.LoadHTMLGlob("index.html")
 
-	
-	router.GET("/test", routes.TempRequest)
 	router.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "index.html", nil)
 	})
