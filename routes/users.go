@@ -1,0 +1,102 @@
+package routes
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"time"
+	// "log"
+
+	"video-share/models"
+	// "server/models"
+	"github.com/go-playground/validator/v10"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/bson"
+	"github.com/gin-gonic/gin"
+)
+
+var validate = validator.New()
+
+var userCollection *mongo.Collection = OpenCollection(Client, "users")
+
+//add a user
+func AddUser(c *gin.Context) {
+
+	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+
+	var user models.User
+
+	if err := c.BindJSON(&user); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		fmt.Println(err)
+		return
+	}
+
+	validationErr := validate.Struct(user)
+	if validationErr != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Error()})
+		fmt.Println(validationErr)
+		return
+	}
+
+	user.ID = primitive.NewObjectID()
+
+	result, insertErr := userCollection.InsertOne(ctx, user)
+	if insertErr != nil {
+		msg := fmt.Sprintf("user was not created")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+		fmt.Println(insertErr)
+		return
+	}
+	defer cancel()
+
+	c.JSON(http.StatusOK, result)
+}
+
+//get all users
+func GetUsers(c *gin.Context){
+
+	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+	
+	var users []bson.M
+
+	cursor, err := userCollection.Find(ctx, bson.M{})
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		fmt.Println(err)
+		return
+	}
+	
+	if err = cursor.All(ctx, &users); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		fmt.Println(err)
+		return
+	}
+
+	defer cancel()
+
+	fmt.Println(users)
+
+	c.JSON(http.StatusOK, users)
+}
+
+//deletes all users
+func DeleteAllUsers(c * gin.Context){
+
+	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+
+	result, err := userCollection.DeleteMany(ctx, bson.M{})
+	
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		fmt.Println(err)
+		return
+	}
+
+	defer cancel()
+
+	c.JSON(http.StatusOK, result.DeletedCount)
+
+}
