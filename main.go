@@ -27,7 +27,12 @@ func main() {
 	router := gin.New()
 	router.Use(gin.Logger())
 
-    router.Use(cors.Default())
+	config := cors.DefaultConfig()
+	config.AllowHeaders = []string{"X-Auth-Token"}
+	config.AllowAllOrigins = true
+	// config.AllowOrigins == []string{"http://google.com", "http://facebook.com"}
+  
+	router.Use(cors.New(config))
 
 	// authorized := router.Group("/admin", gin.BasicAuth(gin.Accounts{
     //     "foo":    "bar",
