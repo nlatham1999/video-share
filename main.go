@@ -29,6 +29,7 @@ func main() {
 
 	config := cors.DefaultConfig()
 	config.AllowHeaders = []string{"X-Auth-Token"}
+    config.ExposeHeaders=    []string{"Content-Length"}
 	config.AllowAllOrigins = true
 	// config.AllowOrigins == []string{"http://google.com", "http://facebook.com"}
   
@@ -61,10 +62,12 @@ func main() {
 	needAPIKey.Use(routes.JWTAuthMiddleware())
 
 	needAPIKey.GET("/users", routes.GetUsers)
+	needAPIKey.GET("/user/:id", routes.GetUser)
 
 	needAPIKey.POST("/user/add", routes.AddUser)
 
 	needAPIKey.DELETE("/users/delete", routes.DeleteAllUsers)
+	needAPIKey.DELETE("/user/delete/:id", routes.DeleteUser)
 
 	router.Run(":" + port)
 }

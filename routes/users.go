@@ -82,6 +82,29 @@ func GetUsers(c *gin.Context){
 	c.JSON(http.StatusOK, users)
 }
 
+//get single user
+func GetUser(c *gin.Context){
+
+	userID := c.Params.ByName("id")
+	docID, _ := primitive.ObjectIDFromHex(userID)
+
+	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+
+	var user bson.M
+
+	if err := userCollection.FindOne(ctx, bson.M{"_id": docID}).Decode(&user); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		fmt.Println(err)
+		return
+	}
+
+	defer cancel()
+
+	fmt.Println(user)
+
+	c.JSON(http.StatusOK, user)
+}
+
 //deletes all users
 func DeleteAllUsers(c * gin.Context){
 
@@ -98,5 +121,23 @@ func DeleteAllUsers(c * gin.Context){
 	defer cancel()
 
 	c.JSON(http.StatusOK, result.DeletedCount)
+}
 
+//deletes one user
+func DeleteUser(c * gin.Context){
+	userID := c.Params.ByName("id")
+	docID, _ := primitive.ObjectIDFromHex(userID)
+	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+
+	result, err := userCollection.DeleteOne(ctx, bson.M{"_id": docID})
+	
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		fmt.Println(err)
+		return
+	}
+
+	defer cancel()
+
+	c.JSON(http.StatusOK, result.DeletedCount)
 }
