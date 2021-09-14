@@ -2,3 +2,4 @@
 .docker_build/
 bin/
 notes.txt
+new_user_credentials.csv
