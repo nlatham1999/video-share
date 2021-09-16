@@ -70,6 +70,13 @@ func main() {
 	needAPIKey.DELETE("/user/delete/:id", routes.DeleteUser)
 
 	needAPIKey.GET("/media/buckets", routes.ListBuckets)
+	needAPIKey.GET("media/all", routes.GetAllMedia)
+	needAPIKey.GET("media/single/:id", routes.GetSingleMedia)
+
+	needAPIKey.POST("/media/add", routes.AddMedia)
+
+	needAPIKey.DELETE("/media/delete-all", routes.DeleteAllMedia)
+	needAPIKey.DELETE("media/delete/:id", routes.DeleteSingleMedia)
 
 	router.Run(":" + port)
 }
