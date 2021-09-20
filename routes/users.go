@@ -108,6 +108,8 @@ func GetUser(c *gin.Context){
 //deletes all users
 func DeleteAllUsers(c * gin.Context){
 
+	// TODO: delete all media - no users = no media
+
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
 	result, err := userCollection.DeleteMany(ctx, bson.M{})
@@ -125,6 +127,9 @@ func DeleteAllUsers(c * gin.Context){
 
 //deletes one user
 func DeleteUser(c * gin.Context){
+
+	// TODO: go through the media list and delete all media for that user
+
 	userID := c.Params.ByName("id")
 	docID, _ := primitive.ObjectIDFromHex(userID)
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)

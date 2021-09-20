@@ -42,7 +42,14 @@ func ListBuckets(c *gin.Context){
 	}
 }
 
+func ListAllObjectsWithinABucket(c * gin.Context){
+
+}
+
 func AddMedia(c *gin.Context) {
+
+	//TODO:
+	//	Go to the users media list and add the media id
 
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
@@ -128,6 +135,7 @@ func GetSingleMedia(c *gin.Context){
 
 //deletes all media
 func DeleteAllMedia(c * gin.Context){
+	// Todo: go through all the users and make all media and accessible media lists empty
 
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
@@ -146,6 +154,10 @@ func DeleteAllMedia(c * gin.Context){
 
 //deletes one media object
 func DeleteSingleMedia(c * gin.Context){
+	// TODO
+	// delete the media file from S3
+	// for each of the accessors, go to their accesible media list and delete the media entry
+	// go to the users media list and delete the media entry
 	mediaID := c.Params.ByName("id")
 	docID, _ := primitive.ObjectIDFromHex(mediaID)
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
@@ -162,3 +174,23 @@ func DeleteSingleMedia(c * gin.Context){
 
 	c.JSON(http.StatusOK, result.DeletedCount)
 }
+
+// TODO
+//body statement should take the form:
+// {
+//	media : media object
+//  accessor: {email: email of the accessor we are adding, action: delete or add}
+// }
+func ChangeAccessor(c * gin.Context){
+	// Takes in an id and updates the media
+	//	uses the media object to put the new media
+	//  looks for the accessor among the users
+	//		if add, then adds the media id to the list of access to for that user
+	//		if delete, then deletes that accessible media for that user
+}
+
+// TODO
+func GetAccessibleMedia(c * gin.Context){
+	//takes in the body the user and using the email, does a search in all media where the email is in the accessors
+}
+
