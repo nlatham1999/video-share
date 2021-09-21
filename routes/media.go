@@ -50,6 +50,7 @@ func AddMedia(c *gin.Context) {
 
 	//TODO:
 	//	Go to the users media list and add the media id
+	//  Upload the media to S3
 
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
@@ -69,6 +70,8 @@ func AddMedia(c *gin.Context) {
 	}
 
 	media.ID = primitive.NewObjectID()
+	
+	userID := media.Owner
 
 	result, insertErr := mediaCollection.InsertOne(ctx, media)
 	if insertErr != nil {
@@ -77,6 +80,28 @@ func AddMedia(c *gin.Context) {
 		fmt.Println(insertErr)
 		return
 	}
+
+	var user models.User
+	if err := userCollection.FindOne(ctx, bson.M{"_id": userID}).Decode(&user); err != nil {
+		msg := fmt.Sprintf("Could not get user to add media to")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+		fmt.Println(err)
+		return
+	}
+
+	updatedMedia := append(user.Media, media.ID)
+	_, updateErr := userCollection.UpdateOne(ctx, bson.M{"_id": userID}, 
+		bson.D{
+			{"$set", bson.D{{"media", updatedMedia}}},
+		},
+	)
+	if updateErr != nil {
+		msg := fmt.Sprintf("Could not assign media to user")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+		fmt.Println(updateErr)
+		return
+	}
+
 	defer cancel()
 
 	c.JSON(http.StatusOK, result)

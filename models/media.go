@@ -4,7 +4,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type User struct {
+type Media struct {
 	ID         	primitive.ObjectID 	`bson:"_id"`
 	Name 		*string				`bson:"name"`
 	Location	*string 			`bson:"location` //s3 location
