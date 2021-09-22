@@ -113,8 +113,14 @@ func DeleteAllUsers(c * gin.Context){
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
 	result, err := userCollection.DeleteMany(ctx, bson.M{})
-	
 	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		fmt.Println(err)
+		return
+	}
+
+	resultMedia, errMedia := mediaCollection.DeleteMany(ctx, bson.M{})
+	if errMedia != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		fmt.Println(err)
 		return
@@ -122,7 +128,7 @@ func DeleteAllUsers(c * gin.Context){
 
 	defer cancel()
 
-	c.JSON(http.StatusOK, result.DeletedCount)
+	c.JSON(http.StatusOK,  result.DeletedCount + resultMedia.DeletedCount)
 }
 
 //deletes one user

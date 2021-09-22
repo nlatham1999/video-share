@@ -187,8 +187,70 @@ func DeleteSingleMedia(c * gin.Context){
 	docID, _ := primitive.ObjectIDFromHex(mediaID)
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
+	//get media object
+	var media models.Media 
+	if err := mediaCollection.FindOne(ctx, bson.M{"_id": docID}).Decode(&media); err != nil {
+		msg := fmt.Sprintf("Could not get media object")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+		fmt.Println(err)
+		return
+	}
+
+	//delete media from accessors
+	accessors := media.Viewers
+	for _, element := range accessors {
+		var user models.User
+
+		//get the user
+		if err := userCollection.FindOne(ctx, bson.M{"_id": element}).Decode(&user); err != nil {
+			msg := fmt.Sprintf("Could not get user accessor object")
+			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+			fmt.Println(err)
+			return
+		}
+
+		//delete the meia from the access to list
+		updatedAccess := findAndDelete(user.MediaAccessTo, media.ID)
+		_, updateErr := userCollection.UpdateOne(ctx, bson.M{"_id": user.ID}, 
+			bson.D{
+				{"$set", bson.D{{"mediaAccessTo", updatedAccess}}},
+			},
+		)
+		if updateErr != nil {
+			msg := fmt.Sprintf("Could not remove accessor for user")
+			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+			fmt.Println(updateErr)
+			return
+		}
+
+	}
+
+	//delete the media from the owner
+	var user models.User
+	//get the owner
+	if err := userCollection.FindOne(ctx, bson.M{"_id": media.Owner}).Decode(&user); err != nil {
+		msg := fmt.Sprintf("Could not get owner object")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+		fmt.Println(err)
+		return
+	}
+
+	//delete the media from owners media list
+	updatedMedia := findAndDelete(user.Media, media.ID)
+	_, updateErr := userCollection.UpdateOne(ctx, bson.M{"_id": user.ID}, 
+		bson.D{
+			{"$set", bson.D{{"media", updatedMedia}}},
+		},
+	)
+	if updateErr != nil {
+		msg := fmt.Sprintf("Could not remove accessor for user")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+		fmt.Println(updateErr)
+		return
+	}
+
+	//delete the media object
 	result, err := mediaCollection.DeleteOne(ctx, bson.M{"_id": docID})
-	
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		fmt.Println(err)
@@ -198,6 +260,18 @@ func DeleteSingleMedia(c * gin.Context){
 	defer cancel()
 
 	c.JSON(http.StatusOK, result.DeletedCount)
+}
+
+func findAndDelete(s []primitive.ObjectID, itemToDelete primitive.ObjectID) []primitive.ObjectID {
+    var new = make([]primitive.ObjectID, len(s))
+    index := 0
+    for _, i := range s {
+        if i != itemToDelete {
+            new = append(new, i)
+            index++
+        }
+    }
+    return new[:index]
 }
 
 // TODO
