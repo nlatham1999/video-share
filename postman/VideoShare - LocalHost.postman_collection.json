@@ -92,7 +92,7 @@
 			"response": []
 		},
 		{
-			"name": "adding user",
+			"name": "add user 1",
 			"event": [
 				{
 					"listen": "test",
@@ -134,7 +134,7 @@
 			"response": []
 		},
 		{
-			"name": "adding user Copy",
+			"name": "add user 2",
 			"event": [
 				{
 					"listen": "test",
@@ -174,6 +174,189 @@
 				}
 			},
 			"response": []
+		},
+		{
+			"name": "Get Users",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"set the user variables\", function () {\r",
+							"    var jsonData = pm.response.json();\r",
+							"    pm.collectionVariables.set(\"user1\", jsonData[0]._id);\r",
+							"    pm.collectionVariables.set(\"user2\", jsonData[1]._id);\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:5000/users/",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"users",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Add Media To User 1",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"set media 1 id\", function () {\r",
+							"    var jsonData = pm.response.json();\r",
+							"    pm.collectionVariables.set(\"media1\", jsonData.InsertedID);\r",
+							"});\r",
+							"pm.test(\"Status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"name\": \"video1\",\r\n    \"location\": \"\",\r\n    \"owner\": \"{{user1}}\",\r\n    \"viewers\": []\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:5000/media/add",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"media",
+						"add"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Make sure user 1 owns media 1",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"user 1 media has new media\", function () {\r",
+							"    var jsonData = pm.response.json();\r",
+							"    pm.expect(jsonData.media[0]).to.eql(pm.collectionVariables.get(\"media1\"));\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:5000/user/{{user1}}",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"user",
+						"{{user1}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete Media 1",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:5000/media/delete/{{media1}}",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"media",
+						"delete",
+						"{{media1}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Make Sure that media 1 is deleted from user 1",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"User 1 media is empty\", function () {\r",
+							"    var jsonData = pm.response.json();\r",
+							"    pm.expect(jsonData.media).to.eql([]);\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:5000/user/{{user1}}",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"user",
+						"{{user1}}"
+					]
+				}
+			},
+			"response": []
 		}
 	],
 	"auth": {
@@ -209,6 +392,20 @@
 					""
 				]
 			}
+		}
+	],
+	"variable": [
+		{
+			"key": "user1",
+			"value": ""
+		},
+		{
+			"key": "user2",
+			"value": ""
+		},
+		{
+			"key": "media1",
+			"value": ""
 		}
 	]
 }

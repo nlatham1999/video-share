@@ -57,14 +57,16 @@ func AddMedia(c *gin.Context) {
 	var media models.Media
 
 	if err := c.BindJSON(&media); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		msg := fmt.Sprintf("Could not bind media")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
 		fmt.Println(err)
 		return
 	}
 
 	validationErr := validate.Struct(media)
 	if validationErr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Error()})
+		msg := fmt.Sprintf("Could not validate media")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
 		fmt.Println(validationErr)
 		return
 	}
