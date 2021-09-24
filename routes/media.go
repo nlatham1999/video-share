@@ -204,18 +204,18 @@ func DeleteSingleMedia(c * gin.Context){
 		var user models.User
 
 		//get the user
-		if err := userCollection.FindOne(ctx, bson.M{"_id": element}).Decode(&user); err != nil {
+		if err := userCollection.FindOne(ctx, bson.M{"email": element}).Decode(&user); err != nil {
 			msg := fmt.Sprintf("Could not get user accessor object")
 			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
 			fmt.Println(err)
 			return
 		}
 
-		//delete the meia from the access to list
+		//delete the media from the access to list
 		updatedAccess := findAndDelete(user.MediaAccessTo, media.ID)
 		_, updateErr := userCollection.UpdateOne(ctx, bson.M{"_id": user.ID}, 
 			bson.D{
-				{"$set", bson.D{{"mediaAccessTo", updatedAccess}}},
+				{"$set", bson.D{{"media-access-to", updatedAccess}}},
 			},
 		)
 		if updateErr != nil {
@@ -279,15 +279,93 @@ func findAndDelete(s []primitive.ObjectID, itemToDelete primitive.ObjectID) []pr
 // TODO
 //body statement should take the form:
 // {
-//	media : media object
-//  accessor: {email: email of the accessor we are adding, action: delete or add}
+//  accessor: id of the accessor we are adding
+//	action : delete or add
 // }
+//TODO
+//pass in owner as header and make sure it matches - will need to pull media object to get owner?
 func ChangeAccessor(c * gin.Context){
 	// Takes in an id and updates the media
 	//	uses the media object to put the new media
 	//  looks for the accessor among the users
 	//		if add, then adds the media id to the list of access to for that user
 	//		if delete, then deletes that accessible media for that user
+	
+	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+
+	var json = &struct {
+		Viewers 	[]string`form:"viwers" json:"viewers" binding:"required"`
+		Accessor    string `form:"accessor" json:"accessor" binding:"required"`
+		Action 		string `form:"action" json:"action" binding:"required"`
+	}{}
+	if c.Bind(json) != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"ERR": "WRONG_INPUT"})
+		return
+	}
+
+	accessor := json.Accessor
+	action := json.Action
+	viewers := json.Viewers
+
+	mediaID := c.Params.ByName("id")
+	docID, _ := primitive.ObjectIDFromHex(mediaID)
+	
+	//update the media object
+	result, updateErr := mediaCollection.UpdateOne(ctx, bson.M{"_id": docID}, 
+		bson.D{
+			{"$set", bson.D{{"viewers", viewers}}},
+		},
+	)
+	if updateErr != nil {
+		msg := fmt.Sprintf("Could not update media object")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+		fmt.Println(updateErr)
+		return
+	}
+
+	//get the accessor user
+	var user models.User
+	if err := userCollection.FindOne(ctx, bson.M{"email": accessor}).Decode(&user); err != nil {
+		msg := fmt.Sprintf("Could not get user accessor object")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+		fmt.Println(err)
+		return
+	}
+
+	if action == "delete" {
+		//delete the media from the access to list
+		updatedAccess := findAndDelete(user.MediaAccessTo, docID)
+		_, updateErr := userCollection.UpdateOne(ctx, bson.M{"_id": user.ID}, 
+			bson.D{
+				{"$set", bson.D{{"media-access-to", updatedAccess}}},
+			},
+		)
+		if updateErr != nil {
+			msg := fmt.Sprintf("Could not remove accessor for user")
+			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+			fmt.Println(updateErr)
+			return
+		}
+	}
+	if action == "add" {
+		//add the media to the access to list
+		updatedAccess := append(user.Media, docID)
+		_, updateErr := userCollection.UpdateOne(ctx, bson.M{"_id": user.ID}, 
+			bson.D{
+				{"$set", bson.D{{"media-access-to", updatedAccess}}},
+			},
+		)
+		if updateErr != nil {
+			msg := fmt.Sprintf("Could not assign media to user")
+			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+			fmt.Println(updateErr)
+			return
+		}
+	}
+
+	defer cancel()
+	
+	c.JSON(http.StatusOK, result.ModifiedCount)
 }
 
 // TODO

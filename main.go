@@ -75,6 +75,8 @@ func main() {
 
 	needAPIKey.POST("/media/add", routes.AddMedia)
 
+	needAPIKey.PUT("/media/change-accessor/:id", routes.ChangeAccessor)
+
 	needAPIKey.DELETE("/media/delete-all", routes.DeleteAllMedia)
 	needAPIKey.DELETE("media/delete/:id", routes.DeleteSingleMedia)
 
