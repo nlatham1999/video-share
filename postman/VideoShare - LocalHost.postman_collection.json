@@ -234,7 +234,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"name\": \"video1\",\r\n    \"location\": \"\",\r\n    \"owner\": \"{{user1}}\",\r\n    \"viewers\": []\r\n}",
+					"raw": "{\r\n    \"name\": \"video1\",\r\n    \"location\": \"\",\r\n    \"owner\": \"user1@email.com\",\r\n    \"viewers\": []\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -280,7 +280,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"name\": \"video2\",\r\n    \"location\": \"\",\r\n    \"owner\": \"{{user1}}\",\r\n    \"viewers\": []\r\n}",
+					"raw": "{\r\n    \"name\": \"video2\",\r\n    \"location\": \"\",\r\n    \"owner\": \"user1@email.com\",\r\n    \"viewers\": []\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -326,7 +326,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"name\": \"video3\",\r\n    \"location\": \"\",\r\n    \"owner\": \"{{user2}}\",\r\n    \"viewers\": []\r\n}",
+					"raw": "{\r\n    \"name\": \"video3\",\r\n    \"location\": \"\",\r\n    \"owner\": \"user2@email.com\",\r\n    \"viewers\": []\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -515,7 +515,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n\"viewers\": [\"user2@email.com\"],\r\n\"accessor\": \"user2@email.com\",\r\n\"action\": \"add\"\r\n}",
+					"raw": "{\r\n\"accessor\": \"user2@email.com\",\r\n\"action\": \"add\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -561,7 +561,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n\"viewers\": [\"user2@email.com\"],\r\n\"accessor\": \"user2@email.com\",\r\n\"action\": \"add\"\r\n}",
+					"raw": "{\r\n\"accessor\": \"user2@email.com\",\r\n\"action\": \"add\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -607,7 +607,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n\"viewers\": [\"user1@email.com\"],\r\n\"accessor\": \"user1@email.com\",\r\n\"action\": \"add\"\r\n}",
+					"raw": "{\r\n\"accessor\": \"user1@email.com\",\r\n\"action\": \"add\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -723,7 +723,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n\"viewers\": [],\r\n\"accessor\": \"user2@email.com\",\r\n\"action\": \"delete\"\r\n}",
+					"raw": "{\r\n\"accessor\": \"user2@email.com\",\r\n\"action\": \"delete\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -804,7 +804,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n\"viewers\": [],\r\n\"accessor\": \"user1@email.com\",\r\n\"action\": \"delete\"\r\n}",
+					"raw": "{\r\n\"accessor\": \"user1@email.com\",\r\n\"action\": \"delete\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -1108,6 +1108,15 @@
 						"{{user2}}"
 					]
 				}
+			},
+			"response": []
+		},
+		{
+			"name": "New Request",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": null
 			},
 			"response": []
 		}
