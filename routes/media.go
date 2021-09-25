@@ -244,10 +244,10 @@ func DeleteSingleMedia(c *gin.Context) {
 		}
 
 		//delete the media from the access to list
-		updatedAccess := findAndDelete(user.MediaAccessTo, media.ID)
+		updatedAccess := findAndDelete(user.Shared, media.ID)
 		_, updateErr := userCollection.UpdateOne(ctx, bson.M{"_id": user.ID},
 			bson.D{
-				{"$set", bson.D{{"media-access-to", updatedAccess}}},
+				{"$set", bson.D{{"shared", updatedAccess}}},
 			},
 		)
 		if updateErr != nil {
@@ -330,6 +330,11 @@ func ChangeAccessor(c *gin.Context) {
 	mediaID := c.Params.ByName("id")
 	docID, _ := primitive.ObjectIDFromHex(mediaID)
 
+	if action != "add" && action != "delete" {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": " action not provided"})
+		return
+	}
+
 	//update the media object
 	result, updateErr := mediaCollection.UpdateOne(ctx, bson.M{"_id": docID},
 		bson.D{
@@ -354,10 +359,10 @@ func ChangeAccessor(c *gin.Context) {
 
 	if action == "delete" {
 		//delete the media from the access to list
-		updatedAccess := findAndDelete(user.MediaAccessTo, docID)
+		updatedAccess := findAndDelete(user.Shared, docID)
 		_, updateErr := userCollection.UpdateOne(ctx, bson.M{"_id": user.ID},
 			bson.D{
-				{"$set", bson.D{{"media-access-to", updatedAccess}}},
+				{"$set", bson.D{{"shared", updatedAccess}}},
 			},
 		)
 		if updateErr != nil {
@@ -369,10 +374,10 @@ func ChangeAccessor(c *gin.Context) {
 	}
 	if action == "add" {
 		//add the media to the access to list
-		updatedAccess := append(user.Media, docID)
+		updatedAccess := append(user.Shared, docID)
 		_, updateErr := userCollection.UpdateOne(ctx, bson.M{"_id": user.ID},
 			bson.D{
-				{"$set", bson.D{{"media-access-to", updatedAccess}}},
+				{"$set", bson.D{{"shared", updatedAccess}}},
 			},
 		)
 		if updateErr != nil {
@@ -394,13 +399,11 @@ func GetAccessibleMedia(c *gin.Context) {
 }
 
 func findAndDelete(s []primitive.ObjectID, itemToDelete primitive.ObjectID) []primitive.ObjectID {
-	var new = make([]primitive.ObjectID, len(s))
-	index := 0
+	var new = make([]primitive.ObjectID, 0)
 	for _, i := range s {
 		if i != itemToDelete {
 			new = append(new, i)
-			index++
 		}
 	}
-	return new[:index]
+	return new
 }

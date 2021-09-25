@@ -5,8 +5,8 @@ import (
 )
 
 type User struct {
-	ID         	primitive.ObjectID 	`bson:"_id"`
-	Email       *string            	`json:"email"`
-	Media		[]primitive.ObjectID `json:"media"`
-	MediaAccessTo []primitive.ObjectID `json:"media-access-to"`
+	ID     primitive.ObjectID   `bson:"_id"`
+	Email  *string              `json:"email"`
+	Media  []primitive.ObjectID `json:"media"`
+	Shared []primitive.ObjectID `json:"shared"`
 }
