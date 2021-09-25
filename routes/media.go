@@ -73,7 +73,7 @@ func AddMedia(c *gin.Context) {
 
 	media.ID = primitive.NewObjectID()
 
-	userID := media.Owner
+	userEmail := media.Owner
 
 	result, insertErr := mediaCollection.InsertOne(ctx, media)
 	if insertErr != nil {
@@ -84,7 +84,7 @@ func AddMedia(c *gin.Context) {
 	}
 
 	var user models.User
-	if err := userCollection.FindOne(ctx, bson.M{"_id": userID}).Decode(&user); err != nil {
+	if err := userCollection.FindOne(ctx, bson.M{"email": userEmail}).Decode(&user); err != nil {
 		msg := fmt.Sprintf("Could not get user to add media to")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
 		fmt.Println(err)
@@ -92,7 +92,7 @@ func AddMedia(c *gin.Context) {
 	}
 
 	// updatedMedia := append(user.Media, media.ID)
-	_, updateErr := userCollection.UpdateOne(ctx, bson.M{"_id": userID},
+	_, updateErr := userCollection.UpdateOne(ctx, bson.M{"_id": user.ID},
 		bson.D{
 			{"$push", bson.D{{"media", media.ID}}},
 		},
@@ -262,7 +262,7 @@ func DeleteSingleMedia(c *gin.Context) {
 	//delete the media from the owner
 	var user models.User
 	//get the owner
-	if err := userCollection.FindOne(ctx, bson.M{"_id": media.Owner}).Decode(&user); err != nil {
+	if err := userCollection.FindOne(ctx, bson.M{"email": media.Owner}).Decode(&user); err != nil {
 		msg := fmt.Sprintf("Could not get owner object")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
 		fmt.Println(err)

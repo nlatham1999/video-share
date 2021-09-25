@@ -8,7 +8,7 @@ type Media struct {
 	ID         	primitive.ObjectID 	`bson:"_id"`
 	Name 		*string				`bson:"name"`
 	Location	*string 			`bson:"location` //s3 location
-	Owner       primitive.ObjectID   `bson:"owner"`
+	Owner       *string   			`bson:"owner"`
 	Viewers		[]*string			`bson:"viewers"` //list of users that can access it
 	//why email instead of id for viewers? 
 	//	- when we display the media, we wont have to to any extra calls to get the email

@@ -29,7 +29,7 @@ func main() {
 	router.Use(gin.Logger())
 
 	config := cors.DefaultConfig()
-	config.AllowHeaders = []string{"X-Auth-Token"}
+	config.AllowHeaders = []string{"X-Auth-Token", "content-type"}
 	config.ExposeHeaders = []string{"Content-Length"}
 	config.AllowAllOrigins = true
 	// config.AllowOrigins == []string{"http://google.com", "http://facebook.com"}
