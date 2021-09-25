@@ -91,10 +91,10 @@ func AddMedia(c *gin.Context) {
 		return
 	}
 
-	updatedMedia := append(user.Media, media.ID)
+	// updatedMedia := append(user.Media, media.ID)
 	_, updateErr := userCollection.UpdateOne(ctx, bson.M{"_id": userID},
 		bson.D{
-			{"$set", bson.D{{"media", updatedMedia}}},
+			{"$push", bson.D{{"media", media.ID}}},
 		},
 	)
 	if updateErr != nil {
@@ -244,10 +244,10 @@ func DeleteSingleMedia(c *gin.Context) {
 		}
 
 		//delete the media from the access to list
-		updatedAccess := findAndDelete(user.Shared, media.ID)
+		// updatedAccess := findAndDelete(user.Shared, media.ID)
 		_, updateErr := userCollection.UpdateOne(ctx, bson.M{"_id": user.ID},
 			bson.D{
-				{"$set", bson.D{{"shared", updatedAccess}}},
+				{"$pull", bson.D{{"shared", media.ID}}},
 			},
 		)
 		if updateErr != nil {
@@ -270,10 +270,10 @@ func DeleteSingleMedia(c *gin.Context) {
 	}
 
 	//delete the media from owners media list
-	updatedMedia := findAndDelete(user.Media, media.ID)
+	// updatedMedia := findAndDelete(user.Media, media.ID)
 	_, updateErr := userCollection.UpdateOne(ctx, bson.M{"_id": user.ID},
 		bson.D{
-			{"$set", bson.D{{"media", updatedMedia}}},
+			{"$pull", bson.D{{"media", media.ID}}},
 		},
 	)
 	if updateErr != nil {
@@ -314,9 +314,8 @@ func ChangeAccessor(c *gin.Context) {
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
 	var json = &struct {
-		Viewers  []string `form:"viewers" json:"viewers" binding:"required"`
-		Accessor string   `form:"accessor" json:"accessor" binding:"required"`
-		Action   string   `form:"action" json:"action" binding:"required"`
+		Accessor string `form:"accessor" json:"accessor" binding:"required"`
+		Action   string `form:"action" json:"action" binding:"required"`
 	}{}
 	if c.Bind(json) != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"ERR": "WRONG_INPUT"})
@@ -325,7 +324,7 @@ func ChangeAccessor(c *gin.Context) {
 
 	accessor := json.Accessor
 	action := json.Action
-	viewers := json.Viewers
+	// viewers := json.Viewers
 
 	mediaID := c.Params.ByName("id")
 	docID, _ := primitive.ObjectIDFromHex(mediaID)
@@ -335,17 +334,34 @@ func ChangeAccessor(c *gin.Context) {
 		return
 	}
 
+	var result *mongo.UpdateResult
 	//update the media object
-	result, updateErr := mediaCollection.UpdateOne(ctx, bson.M{"_id": docID},
-		bson.D{
-			{"$set", bson.D{{"viewers", viewers}}},
-		},
-	)
-	if updateErr != nil {
-		msg := fmt.Sprintf("Could not update media object")
-		c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
-		fmt.Println(updateErr)
-		return
+	if action == "add" {
+		addResult, updateErr := mediaCollection.UpdateOne(ctx, bson.M{"_id": docID},
+			bson.D{
+				{"$push", bson.D{{"viewers", accessor}}},
+			},
+		)
+		if updateErr != nil {
+			msg := fmt.Sprintf("Could not add accessor to media")
+			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+			fmt.Println(updateErr)
+			return
+		}
+		result = addResult
+	} else {
+		deleteResult, updateErr := mediaCollection.UpdateOne(ctx, bson.M{"_id": docID},
+			bson.D{
+				{"$pull", bson.D{{"viewers", accessor}}},
+			},
+		)
+		if updateErr != nil {
+			msg := fmt.Sprintf("Could not update media object")
+			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+			fmt.Println(updateErr)
+			return
+		}
+		result = deleteResult
 	}
 
 	//get the accessor user
@@ -359,10 +375,10 @@ func ChangeAccessor(c *gin.Context) {
 
 	if action == "delete" {
 		//delete the media from the access to list
-		updatedAccess := findAndDelete(user.Shared, docID)
+		// updatedAccess := findAndDelete(user.Shared, docID)
 		_, updateErr := userCollection.UpdateOne(ctx, bson.M{"_id": user.ID},
 			bson.D{
-				{"$set", bson.D{{"shared", updatedAccess}}},
+				{"$pull", bson.D{{"shared", docID}}},
 			},
 		)
 		if updateErr != nil {
@@ -374,10 +390,10 @@ func ChangeAccessor(c *gin.Context) {
 	}
 	if action == "add" {
 		//add the media to the access to list
-		updatedAccess := append(user.Shared, docID)
+		// updatedAccess := append(user.Shared, docID)
 		_, updateErr := userCollection.UpdateOne(ctx, bson.M{"_id": user.ID},
 			bson.D{
-				{"$set", bson.D{{"shared", updatedAccess}}},
+				{"$push", bson.D{{"shared", docID}}},
 			},
 		)
 		if updateErr != nil {
