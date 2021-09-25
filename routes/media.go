@@ -6,22 +6,22 @@ import (
 	"net/http"
 	"time"
 
-    "github.com/aws/aws-sdk-go/aws"
-    "github.com/aws/aws-sdk-go/aws/session"
-    "github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
 
-	
 	"video-share/models"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/bson"
+
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 var mediaCollection *mongo.Collection = OpenCollection(Client, "media")
 
-func ListBuckets(c *gin.Context){
-	
+func ListBuckets(c *gin.Context) {
+
 	sess, err := session.NewSession(&aws.Config{
 		Region: aws.String("us-west-2")},
 	)
@@ -42,7 +42,7 @@ func ListBuckets(c *gin.Context){
 	}
 }
 
-func ListAllObjectsWithinABucket(c * gin.Context){
+func ListAllObjectsWithinABucket(c *gin.Context) {
 
 }
 
@@ -72,7 +72,7 @@ func AddMedia(c *gin.Context) {
 	}
 
 	media.ID = primitive.NewObjectID()
-	
+
 	userID := media.Owner
 
 	result, insertErr := mediaCollection.InsertOne(ctx, media)
@@ -92,7 +92,7 @@ func AddMedia(c *gin.Context) {
 	}
 
 	updatedMedia := append(user.Media, media.ID)
-	_, updateErr := userCollection.UpdateOne(ctx, bson.M{"_id": userID}, 
+	_, updateErr := userCollection.UpdateOne(ctx, bson.M{"_id": userID},
 		bson.D{
 			{"$set", bson.D{{"media", updatedMedia}}},
 		},
@@ -110,10 +110,10 @@ func AddMedia(c *gin.Context) {
 }
 
 //get all media
-func GetAllMedia(c *gin.Context){
+func GetAllMedia(c *gin.Context) {
 
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
-	
+
 	var media []bson.M
 
 	cursor, err := mediaCollection.Find(ctx, bson.M{})
@@ -123,7 +123,7 @@ func GetAllMedia(c *gin.Context){
 		fmt.Println(err)
 		return
 	}
-	
+
 	if err = cursor.All(ctx, &media); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		fmt.Println(err)
@@ -137,8 +137,40 @@ func GetAllMedia(c *gin.Context){
 	c.JSON(http.StatusOK, media)
 }
 
+//get list media
+func GetListOfMedia(c *gin.Context) {
+
+	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+
+	var json = &struct {
+		Media []primitive.ObjectID `form:"media" json:"media" binding:"required"`
+	}{}
+	if err := c.Bind(json); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"ERR": "WRONG_INPUT"})
+		fmt.Println("test", err.Error(), "TEST")
+		return
+	}
+	mediaIDs := json.Media
+
+	var mediaList []bson.M
+	for _, id := range mediaIDs {
+		var media bson.M
+		if err := mediaCollection.FindOne(ctx, bson.M{"_id": id}).Decode(&media); err != nil {
+			fmt.Println(err)
+		} else {
+			mediaList = append(mediaList, media)
+		}
+	}
+
+	defer cancel()
+
+	fmt.Println(mediaList)
+
+	c.JSON(http.StatusOK, mediaList)
+}
+
 //get single media
-func GetSingleMedia(c *gin.Context){
+func GetSingleMedia(c *gin.Context) {
 
 	mediaID := c.Params.ByName("id")
 	docID, _ := primitive.ObjectIDFromHex(mediaID)
@@ -161,13 +193,13 @@ func GetSingleMedia(c *gin.Context){
 }
 
 //deletes all media
-func DeleteAllMedia(c * gin.Context){
+func DeleteAllMedia(c *gin.Context) {
 	// Todo: go through all the users and make all media and accessible media lists empty
 
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
 	result, err := mediaCollection.DeleteMany(ctx, bson.M{})
-	
+
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		fmt.Println(err)
@@ -180,7 +212,7 @@ func DeleteAllMedia(c * gin.Context){
 }
 
 //deletes one media object
-func DeleteSingleMedia(c * gin.Context){
+func DeleteSingleMedia(c *gin.Context) {
 	// TODO
 	// delete the media file from S3
 	// for each of the accessors, go to their accesible media list and delete the media entry
@@ -190,7 +222,7 @@ func DeleteSingleMedia(c * gin.Context){
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
 	//get media object
-	var media models.Media 
+	var media models.Media
 	if err := mediaCollection.FindOne(ctx, bson.M{"_id": docID}).Decode(&media); err != nil {
 		msg := fmt.Sprintf("Could not get media object")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
@@ -213,7 +245,7 @@ func DeleteSingleMedia(c * gin.Context){
 
 		//delete the media from the access to list
 		updatedAccess := findAndDelete(user.MediaAccessTo, media.ID)
-		_, updateErr := userCollection.UpdateOne(ctx, bson.M{"_id": user.ID}, 
+		_, updateErr := userCollection.UpdateOne(ctx, bson.M{"_id": user.ID},
 			bson.D{
 				{"$set", bson.D{{"media-access-to", updatedAccess}}},
 			},
@@ -239,7 +271,7 @@ func DeleteSingleMedia(c * gin.Context){
 
 	//delete the media from owners media list
 	updatedMedia := findAndDelete(user.Media, media.ID)
-	_, updateErr := userCollection.UpdateOne(ctx, bson.M{"_id": user.ID}, 
+	_, updateErr := userCollection.UpdateOne(ctx, bson.M{"_id": user.ID},
 		bson.D{
 			{"$set", bson.D{{"media", updatedMedia}}},
 		},
@@ -264,18 +296,6 @@ func DeleteSingleMedia(c * gin.Context){
 	c.JSON(http.StatusOK, result.DeletedCount)
 }
 
-func findAndDelete(s []primitive.ObjectID, itemToDelete primitive.ObjectID) []primitive.ObjectID {
-    var new = make([]primitive.ObjectID, len(s))
-    index := 0
-    for _, i := range s {
-        if i != itemToDelete {
-            new = append(new, i)
-            index++
-        }
-    }
-    return new[:index]
-}
-
 // TODO
 //body statement should take the form:
 // {
@@ -284,19 +304,19 @@ func findAndDelete(s []primitive.ObjectID, itemToDelete primitive.ObjectID) []pr
 // }
 //TODO
 //pass in owner as header and make sure it matches - will need to pull media object to get owner?
-func ChangeAccessor(c * gin.Context){
+func ChangeAccessor(c *gin.Context) {
 	// Takes in an id and updates the media
 	//	uses the media object to put the new media
 	//  looks for the accessor among the users
 	//		if add, then adds the media id to the list of access to for that user
 	//		if delete, then deletes that accessible media for that user
-	
+
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
 	var json = &struct {
-		Viewers 	[]string`form:"viwers" json:"viewers" binding:"required"`
-		Accessor    string `form:"accessor" json:"accessor" binding:"required"`
-		Action 		string `form:"action" json:"action" binding:"required"`
+		Viewers  []string `form:"viewers" json:"viewers" binding:"required"`
+		Accessor string   `form:"accessor" json:"accessor" binding:"required"`
+		Action   string   `form:"action" json:"action" binding:"required"`
 	}{}
 	if c.Bind(json) != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"ERR": "WRONG_INPUT"})
@@ -309,9 +329,9 @@ func ChangeAccessor(c * gin.Context){
 
 	mediaID := c.Params.ByName("id")
 	docID, _ := primitive.ObjectIDFromHex(mediaID)
-	
+
 	//update the media object
-	result, updateErr := mediaCollection.UpdateOne(ctx, bson.M{"_id": docID}, 
+	result, updateErr := mediaCollection.UpdateOne(ctx, bson.M{"_id": docID},
 		bson.D{
 			{"$set", bson.D{{"viewers", viewers}}},
 		},
@@ -335,7 +355,7 @@ func ChangeAccessor(c * gin.Context){
 	if action == "delete" {
 		//delete the media from the access to list
 		updatedAccess := findAndDelete(user.MediaAccessTo, docID)
-		_, updateErr := userCollection.UpdateOne(ctx, bson.M{"_id": user.ID}, 
+		_, updateErr := userCollection.UpdateOne(ctx, bson.M{"_id": user.ID},
 			bson.D{
 				{"$set", bson.D{{"media-access-to", updatedAccess}}},
 			},
@@ -350,7 +370,7 @@ func ChangeAccessor(c * gin.Context){
 	if action == "add" {
 		//add the media to the access to list
 		updatedAccess := append(user.Media, docID)
-		_, updateErr := userCollection.UpdateOne(ctx, bson.M{"_id": user.ID}, 
+		_, updateErr := userCollection.UpdateOne(ctx, bson.M{"_id": user.ID},
 			bson.D{
 				{"$set", bson.D{{"media-access-to", updatedAccess}}},
 			},
@@ -364,12 +384,23 @@ func ChangeAccessor(c * gin.Context){
 	}
 
 	defer cancel()
-	
+
 	c.JSON(http.StatusOK, result.ModifiedCount)
 }
 
 // TODO
-func GetAccessibleMedia(c * gin.Context){
+func GetAccessibleMedia(c *gin.Context) {
 	//takes in the body the user and using the email, does a search in all media where the email is in the accessors
 }
 
+func findAndDelete(s []primitive.ObjectID, itemToDelete primitive.ObjectID) []primitive.ObjectID {
+	var new = make([]primitive.ObjectID, len(s))
+	index := 0
+	for _, i := range s {
+		if i != itemToDelete {
+			new = append(new, i)
+			index++
+		}
+	}
+	return new[:index]
+}
