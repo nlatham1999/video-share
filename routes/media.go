@@ -40,9 +40,30 @@ func ListBuckets(c *gin.Context) {
 		fmt.Printf("* %s created on %s\n",
 			aws.StringValue(b.Name), aws.TimeValue(b.CreationDate))
 	}
+
+	c.JSON(http.StatusOK, result.Buckets)
 }
 
-func ListAllObjectsWithinABucket(c *gin.Context) {
+func ListBucketContents(c *gin.Context){
+	sess, err := session.NewSession(&aws.Config{
+		Region: aws.String("us-west-2")},
+	)
+
+	svc := s3.New(sess)
+
+	input := &s3.ListObjectsInput{
+		Bucket:  aws.String("video-share-nlatham"),
+		MaxKeys: aws.Int64(2),
+	}
+
+	result, err := svc.ListObjects(input)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	fmt.Println(result)
+	c.JSON(http.StatusOK, result)
 
 }
 
@@ -334,6 +355,15 @@ func ChangeAccessor(c *gin.Context) {
 		return
 	}
 
+	//get the accessor user
+	var user models.User
+	if err := userCollection.FindOne(ctx, bson.M{"email": accessor}).Decode(&user); err != nil {
+		msg := fmt.Sprintf("Could not get user accessor object")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+		fmt.Println(err)
+		return
+	}
+
 	var result *mongo.UpdateResult
 	//update the media object
 	if action == "add" {
@@ -362,15 +392,6 @@ func ChangeAccessor(c *gin.Context) {
 			return
 		}
 		result = deleteResult
-	}
-
-	//get the accessor user
-	var user models.User
-	if err := userCollection.FindOne(ctx, bson.M{"email": accessor}).Decode(&user); err != nil {
-		msg := fmt.Sprintf("Could not get user accessor object")
-		c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
-		fmt.Println(err)
-		return
 	}
 
 	if action == "delete" {

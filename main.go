@@ -71,6 +71,7 @@ func main() {
 	needAPIKey.DELETE("/user/delete/:id", routes.DeleteUser)
 
 	needAPIKey.GET("/media/buckets", routes.ListBuckets)
+	needAPIKey.GET("/media/bucket-contents", routes.ListBucketContents)
 	needAPIKey.GET("media/all", routes.GetAllMedia)
 	needAPIKey.GET("media/single/:id", routes.GetSingleMedia)
 
