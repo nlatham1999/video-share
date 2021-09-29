@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+	"bytes"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/aws/awsutil"
 
 	"video-share/models"
 
@@ -65,6 +67,57 @@ func ListBucketContents(c *gin.Context){
 	fmt.Println(result)
 	c.JSON(http.StatusOK, result)
 
+}
+
+func UploadImage(c *gin.Context) {
+
+	sess, _ := session.NewSession(&aws.Config{
+		Region: aws.String("us-west-2")},
+	)
+	svc := s3.New(sess)
+
+	form, _ := c.MultipartForm()
+
+	files := form.File["images[]"]
+
+	var imageNames []string
+
+	for _, file := range files {
+
+		f, err := file.Open()
+
+		if err != nil {
+			fmt.Println("ERROR",err)
+		}
+
+		defer f.Close()
+
+		size := file.Size
+		buffer := make([]byte, size)
+
+		f.Read(buffer)
+		fileBytes := bytes.NewReader(buffer)
+		fileType := http.DetectContentType(buffer)
+		path := "/media/" + file.Filename
+		params := &s3.PutObjectInput{
+			Bucket:        aws.String("video-share-nlatham"),
+			Key:           aws.String(path),
+			Body:          fileBytes,
+			ContentLength: aws.Int64(size),
+			ContentType:   aws.String(fileType),
+		}
+		resp, err := svc.PutObject(params)
+		if err != nil {
+			fmt.Println("ERROR2: ",err)
+		}
+		fmt.Printf("response %s", awsutil.StringValue(resp))
+
+		imageName := file.Filename
+
+		imageNames = append(imageNames, imageName)
+	}
+
+	c.JSON(http.StatusOK, imageNames)
 }
 
 func AddMedia(c *gin.Context) {

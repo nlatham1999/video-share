@@ -78,6 +78,8 @@ func main() {
 	needAPIKey.POST("media/list", routes.GetListOfMedia) //using post since we are sending data through body
 	needAPIKey.POST("/media/add", routes.AddMedia)
 
+	needAPIKey.POST("/media/post-image", routes.UploadImage)
+
 	needAPIKey.PUT("/media/change-accessor/:id", routes.ChangeAccessor)
 
 	needAPIKey.DELETE("/media/delete-all", routes.DeleteAllMedia)
