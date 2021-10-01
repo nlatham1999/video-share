@@ -10,7 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/aws/awsutil"
+	// "github.com/aws/aws-sdk-go/aws/awsutil"
 
 	"video-share/models"
 
@@ -76,48 +76,45 @@ func UploadImage(c *gin.Context) {
 	)
 	svc := s3.New(sess)
 
-	form, _ := c.MultipartForm()
+	file, err := c.FormFile("video")
 
-	files := form.File["images[]"]
+    // The file cannot be received.
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "No file was recieved"})
+		fmt.Println("ERROR: ", err)
+        return
+    }
 
-	var imageNames []string
+	f, err := file.Open()
 
-	for _, file := range files {
-
-		f, err := file.Open()
-
-		if err != nil {
-			fmt.Println("ERROR",err)
-		}
-
-		defer f.Close()
-
-		size := file.Size
-		buffer := make([]byte, size)
-
-		f.Read(buffer)
-		fileBytes := bytes.NewReader(buffer)
-		fileType := http.DetectContentType(buffer)
-		path := "/media/" + file.Filename
-		params := &s3.PutObjectInput{
-			Bucket:        aws.String("video-share-nlatham"),
-			Key:           aws.String(path),
-			Body:          fileBytes,
-			ContentLength: aws.Int64(size),
-			ContentType:   aws.String(fileType),
-		}
-		resp, err := svc.PutObject(params)
-		if err != nil {
-			fmt.Println("ERROR2: ",err)
-		}
-		fmt.Printf("response %s", awsutil.StringValue(resp))
-
-		imageName := file.Filename
-
-		imageNames = append(imageNames, imageName)
+	if err != nil {
+		fmt.Println("ERROR",err)
 	}
 
-	c.JSON(http.StatusOK, imageNames)
+	defer f.Close()
+
+	size := file.Size
+	buffer := make([]byte, size)
+
+	f.Read(buffer)
+	fileBytes := bytes.NewReader(buffer)
+	fileType := http.DetectContentType(buffer)
+	path := file.Filename
+	params := &s3.PutObjectInput{
+		Bucket:        aws.String("video-share-nlatham"),
+		Key:           aws.String(path),
+		Body:          fileBytes,
+		ContentLength: aws.Int64(size),
+		ContentType:   aws.String(fileType),
+	}
+	_, s3Err := svc.PutObject(params)
+	if s3Err != nil {
+		fmt.Println("ERROR2: ",err)
+	}
+	// fmt.Printf("response %s", awsutil.StringValue(resp))
+
+	fmt.Println(file.Filename)
+	c.JSON(http.StatusOK, file.Filename)
 }
 
 func AddMedia(c *gin.Context) {
