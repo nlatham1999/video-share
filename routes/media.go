@@ -123,6 +123,8 @@ func UploadMedia(c *gin.Context) {
         return
     }
 
+	fileName := c.PostForm("name")
+
 	f, err := file.Open()
 
 	if err != nil {
@@ -137,7 +139,7 @@ func UploadMedia(c *gin.Context) {
 	f.Read(buffer)
 	fileBytes := bytes.NewReader(buffer)
 	fileType := http.DetectContentType(buffer)
-	path := file.Filename
+	path := fileName
 	params := &s3.PutObjectInput{
 		Bucket:        aws.String("video-share-nlatham"),
 		Key:           aws.String(path),
@@ -160,6 +162,7 @@ func AddMedia(c *gin.Context) {
 	//TODO:
 	//	Go to the users media list and add the media id
 	//  Upload the media to S3
+	
 
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
