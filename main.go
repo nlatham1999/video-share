@@ -72,13 +72,14 @@ func main() {
 
 	needAPIKey.GET("/media/buckets", routes.ListBuckets)
 	needAPIKey.GET("/media/bucket-contents", routes.ListBucketContents)
+	needAPIKey.GET("/media/empty-bucket", routes.EmptyBucket)
 	needAPIKey.GET("media/all", routes.GetAllMedia)
 	needAPIKey.GET("media/single/:id", routes.GetSingleMedia)
 
 	needAPIKey.POST("media/list", routes.GetListOfMedia) //using post since we are sending data through body
 	needAPIKey.POST("/media/add", routes.AddMedia)
 
-	needAPIKey.POST("/media/post-image", routes.UploadImage)
+	needAPIKey.POST("/media/post-media", routes.UploadMedia)
 
 	needAPIKey.PUT("/media/change-accessor/:id", routes.ChangeAccessor)
 

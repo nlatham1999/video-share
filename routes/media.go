@@ -69,7 +69,45 @@ func ListBucketContents(c *gin.Context){
 
 }
 
-func UploadImage(c *gin.Context) {
+func EmptyBucket(c *gin.Context){
+	sess, err := session.NewSession(&aws.Config{
+		Region: aws.String("us-west-2")},
+	)
+
+	svc := s3.New(sess)
+
+	input := &s3.ListObjectsInput{
+		Bucket:  aws.String("video-share-nlatham"),
+		MaxKeys: aws.Int64(2),
+	}
+
+	result, err := svc.ListObjects(input)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	var results []string
+
+	for _, obj := range result.Contents {
+		input := &s3.DeleteObjectInput{
+			Bucket: aws.String("video-share-nlatham"),
+			Key:    aws.String(*obj.Key),
+		}
+		
+		_, err := svc.DeleteObject(input)
+		if err != nil {
+			fmt.Println(err.Error())
+			results = append(results, "Unable to delete: "+*obj.Key)
+		}else{
+			results = append(results, "Deleted: "+*obj.Key )
+		}
+	}
+
+	c.JSON(http.StatusOK, results)
+}
+
+func UploadMedia(c *gin.Context) {
 
 	sess, _ := session.NewSession(&aws.Config{
 		Region: aws.String("us-west-2")},
