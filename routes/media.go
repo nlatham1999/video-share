@@ -107,6 +107,7 @@ func EmptyBucket(c *gin.Context){
 	c.JSON(http.StatusOK, results)
 }
 
+//uploads a media file to s3
 func UploadMedia(c *gin.Context) {
 
 	sess, _ := session.NewSession(&aws.Config{
@@ -151,7 +152,6 @@ func UploadMedia(c *gin.Context) {
 	if s3Err != nil {
 		fmt.Println("ERROR2: ",err)
 	}
-	// fmt.Printf("response %s", awsutil.StringValue(resp))
 
 	fmt.Println(file.Filename)
 	c.JSON(http.StatusOK, file.Filename)
@@ -184,7 +184,8 @@ func AddMedia(c *gin.Context) {
 	}
 
 	media.ID = primitive.NewObjectID()
-
+	var loc = media.ID.Hex() + "." + *media.Mediatype
+	media.Location = &loc
 	userEmail := media.Owner
 
 	result, insertErr := mediaCollection.InsertOne(ctx, media)
@@ -219,6 +220,33 @@ func AddMedia(c *gin.Context) {
 	defer cancel()
 
 	c.JSON(http.StatusOK, result)
+}
+
+func GetPreSignedUrl(c *gin.Context) {
+	
+	mediaID := c.Params.ByName("location")
+
+	sess, err := session.NewSession(&aws.Config{
+        Region: aws.String("us-west-2")},
+    )
+
+    // Create S3 service client
+    svc := s3.New(sess)
+
+	fmt.Println("TEST:",mediaID)
+
+    req, _ := svc.GetObjectRequest(&s3.GetObjectInput{
+        Bucket: aws.String("video-share-nlatham"),
+        Key:    aws.String(mediaID),
+    })
+    urlStr, err := req.Presign(15 * time.Minute)
+
+    if err != nil {
+        fmt.Println("Failed to sign request", err)
+    }
+
+    fmt.Println("The URL is", urlStr)
+	c.JSON(http.StatusOK, urlStr)
 }
 
 //get all media

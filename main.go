@@ -75,6 +75,7 @@ func main() {
 	needAPIKey.GET("/media/empty-bucket", routes.EmptyBucket)
 	needAPIKey.GET("media/all", routes.GetAllMedia)
 	needAPIKey.GET("media/single/:id", routes.GetSingleMedia)
+	needAPIKey.GET("/media/get-presigned-url/:location", routes.GetPreSignedUrl)
 
 	needAPIKey.POST("media/list", routes.GetListOfMedia) //using post since we are sending data through body
 	needAPIKey.POST("/media/add", routes.AddMedia)
