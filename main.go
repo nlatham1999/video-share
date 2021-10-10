@@ -55,8 +55,6 @@ func main() {
 	needAPIKey := router.Group("/")
 	needAPIKey.Use(routes.JWTAuthMiddleware())
 
-	// needAPIKey.Use(cors.New(config))
-
 	needAPIKey.GET("/users", routes.GetUsers)
 	needAPIKey.GET("/user/:id", routes.GetUser)
 
