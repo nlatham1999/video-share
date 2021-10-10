@@ -6,9 +6,25 @@ import (
 
 	"video-share/routes"
 
-	"github.com/gin-contrib/cors"
+	// "github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
+
+func CORSMiddleware() gin.HandlerFunc {
+    return func(c *gin.Context) {
+        c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+        c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+        c.Writer.Header().Set("Access-Control-Allow-Headers", "X-Auth-Token, content-type")
+        c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")
+
+        if c.Request.Method == "OPTIONS" {
+            c.AbortWithStatus(204)
+            return
+        }
+
+        c.Next()
+    }
+}
 
 func main() {
 
@@ -20,14 +36,15 @@ func main() {
 
 	router := gin.New()
 	router.Use(gin.Logger())
+	router.Use(CORSMiddleware())
 
-	config := cors.DefaultConfig()
-	config.AllowHeaders = []string{"X-Auth-Token", "content-type"}
-	config.ExposeHeaders = []string{"Content-Length"}
-	config.AllowAllOrigins = true
+	// config := cors.DefaultConfig()
+	// config.AllowHeaders = []string{"X-Auth-Token", "content-type"}
+	// config.ExposeHeaders = []string{"Content-Length"}
+	// config.AllowAllOrigins = true
 	// config.AllowOrigins = []string{"https://www.videoshare.app"}
 
-	router.Use(cors.New(config))
+	// router.Use(cors.New(config))
 
 	router.LoadHTMLGlob("index.html")
 
@@ -38,7 +55,7 @@ func main() {
 	needAPIKey := router.Group("/")
 	needAPIKey.Use(routes.JWTAuthMiddleware())
 
-	needAPIKey.Use(cors.New(config))
+	// needAPIKey.Use(cors.New(config))
 
 	needAPIKey.GET("/users", routes.GetUsers)
 	needAPIKey.GET("/user/:id", routes.GetUser)
