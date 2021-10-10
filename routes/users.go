@@ -85,19 +85,26 @@ func GetUsers(c *gin.Context){
 //get single user
 func GetUser(c *gin.Context){
 
-	userID := c.Params.ByName("id")
-	docID, _ := primitive.ObjectIDFromHex(userID)
+	userEmail := c.Params.ByName("id")
 
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
-	var user bson.M
+	var user []bson.M
 
-	if err := userCollection.FindOne(ctx, bson.M{"_id": docID}).Decode(&user); err != nil {
+
+	cursor, err := userCollection.Find(ctx, bson.M{"email": userEmail})
+
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		fmt.Println(err)
 		return
 	}
-
+	
+	if err = cursor.All(ctx, &user); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		fmt.Println(err)
+		return
+	}
 	defer cancel()
 
 	fmt.Println(user)
