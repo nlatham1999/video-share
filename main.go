@@ -21,15 +21,13 @@ func main() {
 	router := gin.New()
 	router.Use(gin.Logger())
 
-	// config := cors.DefaultConfig()
-	// config.AllowHeaders = []string{"X-Auth-Token", "content-type"}
-	// config.ExposeHeaders = []string{"Content-Length"}
-	// config.AllowAllOrigins = true
+	config := cors.DefaultConfig()
+	config.AllowHeaders = []string{"X-Auth-Token", "content-type"}
+	config.ExposeHeaders = []string{"Content-Length"}
+	config.AllowAllOrigins = true
 	// config.AllowOrigins = []string{"https://www.videoshare.app"}
 
-	// router.Use(cors.New(config))
-	
-	router.Use(cors.Default())
+	router.Use(cors.New(config))
 
 	router.LoadHTMLGlob("index.html")
 
@@ -39,6 +37,8 @@ func main() {
 
 	needAPIKey := router.Group("/")
 	needAPIKey.Use(routes.JWTAuthMiddleware())
+
+	needAPIKey.Use(cors.New(config))
 
 	needAPIKey.GET("/users", routes.GetUsers)
 	needAPIKey.GET("/user/:id", routes.GetUser)
