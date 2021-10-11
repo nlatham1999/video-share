@@ -43,8 +43,8 @@ func main() {
 	config := cors.DefaultConfig()
 	config.AllowHeaders = []string{"X-Auth-Token", "content-type"}
 	config.ExposeHeaders = []string{"Content-Length"}
-	// config.AllowAllOrigins = true
-	config.AllowOrigins = []string{"*"}
+	config.AllowAllOrigins = true
+	// config.AllowOrigins = []string{"*"}
 
 	router.Use(cors.New(config))
 
