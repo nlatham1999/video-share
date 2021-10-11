@@ -9,3 +9,5 @@ require (
 	github.com/go-playground/validator/v10 v10.9.0
 	go.mongodb.org/mongo-driver v1.7.2
 )
+
+replace github.com/gin-contrib/cors => ../cors
