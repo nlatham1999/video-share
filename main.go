@@ -6,45 +6,21 @@ import (
 
 	"video-share/routes"
 
-	// "github.com/nlatham1999/cors"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
-
-// func CORSMiddleware() gin.HandlerFunc {
-//     return func(c *gin.Context) {
-//         c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-//         c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
-//         c.Writer.Header().Set("Access-Control-Allow-Headers", "X-Auth-Token, content-type")
-//         c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")
-
-//         if c.Request.Method == "OPTIONS" {
-//             c.AbortWithStatus(204)
-//             return
-//         }
-
-//         c.Next()
-//     }
-// }
 
 func main() {
 
 	port := os.Getenv("PORT")
 
-	// if port == "" {
-	// 	port = "8000"
-	// }
-
 	router := gin.New()
 	router.Use(gin.Logger())
-
-	// router.Use(CORSMiddleware())
 
 	config := cors.DefaultConfig()
 	config.AllowHeaders = []string{"X-Auth-Token", "content-type"}
 	config.ExposeHeaders = []string{"Content-Length"}
-	// config.AllowAllOrigins = true
-	// config.AllowOrigins = []string{"https://www.videoshare.app"}
+	config.AllowOrigins = []string{"https://www.videoshare.app"}
 
 	router.Use(cors.New(config))
 
