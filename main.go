@@ -1,6 +1,9 @@
 package main
 
 import (
+	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 	"os"
 
@@ -8,7 +11,69 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+
+	// "github.com/codegangsta/negroni"
+	jwtmiddleware "github.com/auth0/go-jwt-middleware"
+	"github.com/form3tech-oss/jwt-go"
+	// "github.com/gorilla/mux"
 )
+
+type Response struct {
+	Message string `json:"message"`
+}
+
+type Jwks struct {
+	Keys []JSONWebKeys `json:"keys"`
+}
+
+type JSONWebKeys struct {
+	Kty string   `json:"kty"`
+	Kid string   `json:"kid"`
+	Use string   `json:"use"`
+	N   string   `json:"n"`
+	E   string   `json:"e"`
+	X5c []string `json:"x5c"`
+}
+
+var jwtMiddleware = jwtmiddleware.New(jwtmiddleware.Options{
+	ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
+		// Verify 'aud' claim
+		aud := "https://dev-qklxu7tm.us.auth0.com/"
+		checkAud := token.Claims.(jwt.MapClaims).VerifyAudience(aud, false)
+		if !checkAud {
+			fmt.Println("Invalid Audience")
+			return token, errors.New("Invalid audience.")
+		}
+		// Verify 'iss' claim
+		iss := "https://videoshare/api"
+		checkIss := token.Claims.(jwt.MapClaims).VerifyIssuer(iss, false)
+		if !checkIss {
+			fmt.Println("Invalid issuer")
+			return token, errors.New("Invalid issuer.")
+		}
+
+		cert, err := getPemCert(token)
+		if err != nil {
+			fmt.Println("getting pem cert failed")
+			panic(err.Error())
+		}
+
+		result, _ := jwt.ParseRSAPublicKeyFromPEM([]byte(cert))
+		return result, nil
+	},
+	SigningMethod: jwt.SigningMethodRS256,
+})
+
+func checkJWT() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		fmt.Println("testing")
+		jwtMid := *jwtMiddleware
+		if err := jwtMid.CheckJWT(c.Writer, c.Request); err != nil {
+			fmt.Println("ERROR: ", err)
+			c.AbortWithStatus(401)
+		}
+	}
+}
 
 func main() {
 
@@ -18,9 +83,9 @@ func main() {
 	router.Use(gin.Logger())
 
 	config := cors.DefaultConfig()
-	config.AllowHeaders = []string{"X-Auth-Token", "content-type"}
+	config.AllowHeaders = []string{"X-Auth-Token", "content-type", "authorization"}
 	config.ExposeHeaders = []string{"Content-Length"}
-	config.AllowOrigins = []string{"https://www.videoshare.app"}
+	config.AllowOrigins = []string{"*"}
 
 	router.Use(cors.New(config))
 
@@ -31,7 +96,9 @@ func main() {
 	})
 
 	needAPIKey := router.Group("/")
-	needAPIKey.Use(routes.JWTAuthMiddleware())
+	// needAPIKey.Use(routes.JWTAuthMiddleware())
+	fmt.Println("TESTING")
+	needAPIKey.Use(checkJWT())
 
 	needAPIKey.GET("/users", routes.GetUsers)
 	needAPIKey.GET("/user/:id", routes.GetUser)
@@ -59,4 +126,37 @@ func main() {
 	needAPIKey.DELETE("media/delete/:id", routes.DeleteSingleMedia)
 
 	router.Run(":" + port)
+}
+
+func getPemCert(token *jwt.Token) (string, error) {
+	cert := ""
+	resp, err := http.Get("https://videoshare/api.well-known/jwks.json")
+
+	if err != nil {
+		fmt.Println("error1")
+		return cert, err
+	}
+	defer resp.Body.Close()
+
+	var jwks = Jwks{}
+	err = json.NewDecoder(resp.Body).Decode(&jwks)
+
+	if err != nil {
+		fmt.Println("error2")
+		return cert, err
+	}
+
+	for k, _ := range jwks.Keys {
+		if token.Header["kid"] == jwks.Keys[k].Kid {
+			cert = "-----BEGIN CERTIFICATE-----\n" + jwks.Keys[k].X5c[0] + "\n-----END CERTIFICATE-----"
+		}
+	}
+
+	if cert == "" {
+		fmt.Println("Unable to find appropriate key")
+		err := errors.New("Unable to find appropriate key.")
+		return cert, err
+	}
+
+	return cert, nil
 }
