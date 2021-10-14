@@ -39,9 +39,10 @@ var jwtMiddleware = jwtmiddleware.New(jwtmiddleware.Options{
 	ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
 		// Verify 'aud' claim
 		aud := "https://dev-qklxu7tm.us.auth0.com/"
+		fmt.Println(token)
 		checkAud := token.Claims.(jwt.MapClaims).VerifyAudience(aud, false)
 		if !checkAud {
-			fmt.Println("Invalid Audience")
+			fmt.Println("Invalid Audience: ", aud)
 			return token, errors.New("Invalid audience.")
 		}
 		// Verify 'iss' claim
