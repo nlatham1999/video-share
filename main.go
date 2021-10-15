@@ -92,35 +92,30 @@ func main() {
 		c.HTML(http.StatusOK, "index.html", nil)
 	})
 
-	needAPIKey := router.Group("/")
-	// needAPIKey.Use(routes.JWTAuthMiddleware())
-	fmt.Println("TESTING")
-	needAPIKey.Use(checkJWT())
+	//admin endpoints. not available to the web app
+	// adminGroup := router.Group("/")
+	// adminGroup.Use(routes.JWTAuthMiddleware()) //using simple api key since these will only be available on localhost
+	// adminGroup.GET("/users", routes.GetUsers)
+	// adminGroup.DELETE("/users/delete", routes.DeleteAllUsers)
+	// adminGroup.GET("/media/buckets", routes.ListBuckets)
+	// adminGroup.GET("/media/bucket-contents", routes.ListBucketContents)
+	// adminGroup.GET("/media/empty-bucket", routes.EmptyBucket)
+	// adminGroup.GET("media/all", routes.GetAllMedia)
+	// adminGroup.DELETE("/media/delete-all", routes.DeleteAllMedia)
 
-	needAPIKey.GET("/users", routes.GetUsers)
-	needAPIKey.GET("/user/:id", routes.GetUser)
-
-	needAPIKey.POST("/user/add", routes.AddUser)
-
-	needAPIKey.DELETE("/users/delete", routes.DeleteAllUsers)
-	needAPIKey.DELETE("/user/delete/:id", routes.DeleteUser)
-
-	needAPIKey.GET("/media/buckets", routes.ListBuckets)
-	needAPIKey.GET("/media/bucket-contents", routes.ListBucketContents)
-	needAPIKey.GET("/media/empty-bucket", routes.EmptyBucket)
-	needAPIKey.GET("media/all", routes.GetAllMedia)
-	needAPIKey.GET("media/single/:id", routes.GetSingleMedia)
-	needAPIKey.GET("/media/get-presigned-url/:location", routes.GetPreSignedUrl)
-
-	needAPIKey.POST("media/list", routes.GetListOfMedia) //using post since we are sending data through body
-	needAPIKey.POST("/media/add", routes.AddMedia)
-
-	needAPIKey.POST("/media/post-media", routes.UploadMedia)
-
-	needAPIKey.PUT("/media/change-accessor/:id", routes.ChangeAccessor)
-
-	needAPIKey.DELETE("/media/delete-all", routes.DeleteAllMedia)
-	needAPIKey.DELETE("media/delete/:id", routes.DeleteSingleMedia)
+	//user endpoints which will be available to the web app
+	userGroup := router.Group("/")
+	userGroup.Use(checkJWT())
+	userGroup.GET("/user/:id", routes.GetUser)
+	userGroup.GET("media/single/:id", routes.GetSingleMedia)
+	userGroup.GET("/media/get-presigned-url/:location", routes.GetPreSignedUrl)
+	userGroup.POST("/user/add", routes.AddUser)
+	userGroup.POST("media/list", routes.GetListOfMedia) //using post since we are sending data through body
+	userGroup.POST("/media/add", routes.AddMedia)
+	userGroup.POST("/media/post-media", routes.UploadMedia)
+	userGroup.DELETE("/user/delete/:id", routes.DeleteUser)
+	userGroup.PUT("/media/change-accessor/:id", routes.ChangeAccessor)
+	userGroup.DELETE("media/delete/:id", routes.DeleteSingleMedia)
 
 	router.Run(":" + port)
 }
