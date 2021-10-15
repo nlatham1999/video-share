@@ -38,24 +38,21 @@ type JSONWebKeys struct {
 var jwtMiddleware = jwtmiddleware.New(jwtmiddleware.Options{
 	ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
 		// Verify 'aud' claim
-		aud := "https://dev-qklxu7tm.us.auth0.com/"
+		aud := "https://videoshare/api"
 		fmt.Println(token)
 		checkAud := token.Claims.(jwt.MapClaims).VerifyAudience(aud, false)
 		if !checkAud {
-			fmt.Println("Invalid Audience: ", aud)
 			return token, errors.New("Invalid audience.")
 		}
 		// Verify 'iss' claim
-		iss := "https://videoshare/api"
+		iss := os.Getenv("AUTH0_DOMAIN")
 		checkIss := token.Claims.(jwt.MapClaims).VerifyIssuer(iss, false)
 		if !checkIss {
-			fmt.Println("Invalid issuer")
 			return token, errors.New("Invalid issuer.")
 		}
 
 		cert, err := getPemCert(token)
 		if err != nil {
-			fmt.Println("getting pem cert failed")
 			panic(err.Error())
 		}
 
@@ -67,7 +64,6 @@ var jwtMiddleware = jwtmiddleware.New(jwtmiddleware.Options{
 
 func checkJWT() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		fmt.Println("testing")
 		jwtMid := *jwtMiddleware
 		if err := jwtMid.CheckJWT(c.Writer, c.Request); err != nil {
 			fmt.Println("ERROR: ", err)
@@ -131,7 +127,7 @@ func main() {
 
 func getPemCert(token *jwt.Token) (string, error) {
 	cert := ""
-	resp, err := http.Get("https://videoshare/api.well-known/jwks.json")
+	resp, err := http.Get(os.Getenv("AUTH0_DOMAIN") + ".well-known/jwks.json")
 
 	if err != nil {
 		fmt.Println("error1")
