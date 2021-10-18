@@ -39,7 +39,6 @@ var jwtMiddleware = jwtmiddleware.New(jwtmiddleware.Options{
 	ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
 		// Verify 'aud' claim
 		aud := "https://videoshare/api"
-		fmt.Println(token)
 		checkAud := token.Claims.(jwt.MapClaims).VerifyAudience(aud, false)
 		if !checkAud {
 			return token, errors.New("Invalid audience.")
@@ -125,7 +124,6 @@ func getPemCert(token *jwt.Token) (string, error) {
 	resp, err := http.Get(os.Getenv("AUTH0_DOMAIN") + ".well-known/jwks.json")
 
 	if err != nil {
-		fmt.Println("error1")
 		return cert, err
 	}
 	defer resp.Body.Close()
@@ -134,7 +132,6 @@ func getPemCert(token *jwt.Token) (string, error) {
 	err = json.NewDecoder(resp.Body).Decode(&jwks)
 
 	if err != nil {
-		fmt.Println("error2")
 		return cert, err
 	}
 

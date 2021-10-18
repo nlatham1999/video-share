@@ -1,15 +1,16 @@
 package routes
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"net/http"
 	"time"
-	"bytes"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+
 	// "github.com/aws/aws-sdk-go/aws/awsutil"
 
 	"video-share/models"
@@ -36,8 +37,6 @@ func ListBuckets(c *gin.Context) {
 		return
 	}
 
-	fmt.Println("Buckets:")
-
 	for _, b := range result.Buckets {
 		fmt.Printf("* %s created on %s\n",
 			aws.StringValue(b.Name), aws.TimeValue(b.CreationDate))
@@ -46,7 +45,7 @@ func ListBuckets(c *gin.Context) {
 	c.JSON(http.StatusOK, result.Buckets)
 }
 
-func ListBucketContents(c *gin.Context){
+func ListBucketContents(c *gin.Context) {
 	sess, err := session.NewSession(&aws.Config{
 		Region: aws.String("us-west-2")},
 	)
@@ -64,12 +63,11 @@ func ListBucketContents(c *gin.Context){
 		return
 	}
 
-	fmt.Println(result)
 	c.JSON(http.StatusOK, result)
 
 }
 
-func EmptyBucket(c *gin.Context){
+func EmptyBucket(c *gin.Context) {
 	sess, err := session.NewSession(&aws.Config{
 		Region: aws.String("us-west-2")},
 	)
@@ -94,13 +92,13 @@ func EmptyBucket(c *gin.Context){
 			Bucket: aws.String("video-share-nlatham"),
 			Key:    aws.String(*obj.Key),
 		}
-		
+
 		_, err := svc.DeleteObject(input)
 		if err != nil {
 			fmt.Println(err.Error())
 			results = append(results, "Unable to delete: "+*obj.Key)
-		}else{
-			results = append(results, "Deleted: "+*obj.Key )
+		} else {
+			results = append(results, "Deleted: "+*obj.Key)
 		}
 	}
 
@@ -117,19 +115,19 @@ func UploadMedia(c *gin.Context) {
 
 	file, err := c.FormFile("video")
 
-    // The file cannot be received.
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "No file was recieved"})
+	// The file cannot be received.
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "No file was recieved"})
 		fmt.Println("ERROR: ", err)
-        return
-    }
+		return
+	}
 
 	fileName := c.PostForm("name")
 
 	f, err := file.Open()
 
 	if err != nil {
-		fmt.Println("ERROR",err)
+		fmt.Println("ERROR", err)
 	}
 
 	defer f.Close()
@@ -150,7 +148,7 @@ func UploadMedia(c *gin.Context) {
 	}
 	_, s3Err := svc.PutObject(params)
 	if s3Err != nil {
-		fmt.Println("ERROR2: ",err)
+		fmt.Println("ERROR2: ", err)
 	}
 
 	fmt.Println(file.Filename)
@@ -158,11 +156,6 @@ func UploadMedia(c *gin.Context) {
 }
 
 func AddMedia(c *gin.Context) {
-
-	//TODO:
-	//	Go to the users media list and add the media id
-	//  Upload the media to S3
-	
 
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
@@ -188,19 +181,19 @@ func AddMedia(c *gin.Context) {
 	media.Location = &loc
 	userEmail := media.Owner
 
-	result, insertErr := mediaCollection.InsertOne(ctx, media)
-	if insertErr != nil {
-		msg := fmt.Sprintf("media object was not created")
-		c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
-		fmt.Println(insertErr)
-		return
-	}
-
 	var user models.User
 	if err := userCollection.FindOne(ctx, bson.M{"email": userEmail}).Decode(&user); err != nil {
 		msg := fmt.Sprintf("Could not get user to add media to")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
 		fmt.Println(err)
+		return
+	}
+
+	result, insertErr := mediaCollection.InsertOne(ctx, media)
+	if insertErr != nil {
+		msg := fmt.Sprintf("media object was not created")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+		fmt.Println(insertErr)
 		return
 	}
 
@@ -223,29 +216,29 @@ func AddMedia(c *gin.Context) {
 }
 
 func GetPreSignedUrl(c *gin.Context) {
-	
+
 	mediaID := c.Params.ByName("location")
 
 	sess, err := session.NewSession(&aws.Config{
-        Region: aws.String("us-west-2")},
-    )
+		Region: aws.String("us-west-2")},
+	)
 
-    // Create S3 service client
-    svc := s3.New(sess)
+	// Create S3 service client
+	svc := s3.New(sess)
 
-	fmt.Println("TEST:",mediaID)
+	fmt.Println("TEST:", mediaID)
 
-    req, _ := svc.GetObjectRequest(&s3.GetObjectInput{
-        Bucket: aws.String("video-share-nlatham"),
-        Key:    aws.String(mediaID),
-    })
-    urlStr, err := req.Presign(15 * time.Minute)
+	req, _ := svc.GetObjectRequest(&s3.GetObjectInput{
+		Bucket: aws.String("video-share-nlatham"),
+		Key:    aws.String(mediaID),
+	})
+	urlStr, err := req.Presign(15 * time.Minute)
 
-    if err != nil {
-        fmt.Println("Failed to sign request", err)
-    }
+	if err != nil {
+		fmt.Println("Failed to sign request", err)
+	}
 
-    fmt.Println("The URL is", urlStr)
+	fmt.Println("The URL is", urlStr)
 	c.JSON(http.StatusOK, urlStr)
 }
 
@@ -445,11 +438,6 @@ func DeleteSingleMedia(c *gin.Context) {
 //TODO
 //pass in owner as header and make sure it matches - will need to pull media object to get owner?
 func ChangeAccessor(c *gin.Context) {
-	// Takes in an id and updates the media
-	//	uses the media object to put the new media
-	//  looks for the accessor among the users
-	//		if add, then adds the media id to the list of access to for that user
-	//		if delete, then deletes that accessible media for that user
 
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 
@@ -478,14 +466,28 @@ func ChangeAccessor(c *gin.Context) {
 	var user models.User
 	if err := userCollection.FindOne(ctx, bson.M{"email": accessor}).Decode(&user); err != nil {
 		msg := fmt.Sprintf("Could not get user accessor object")
-		c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
-		fmt.Println(err)
+		c.JSON(http.StatusNoContent, gin.H{"error": msg})
+		fmt.Println("Could not get user accessor object")
 		return
 	}
 
 	var result *mongo.UpdateResult
 	//update the media object
 	if action == "add" {
+
+		//if an accessor matching the email is found, throw an error
+		var media2 models.Media
+		if err := mediaCollection.FindOne(ctx,
+			bson.M{
+				"_id":     docID,
+				"viewers": accessor,
+			},
+		).Decode(&media2); err == nil {
+			msg := fmt.Sprintf("Accessor already in database")
+			c.JSON(http.StatusAlreadyReported, gin.H{"error": msg})
+			return
+		}
+
 		addResult, updateErr := mediaCollection.UpdateOne(ctx, bson.M{"_id": docID},
 			bson.D{
 				{"$push", bson.D{{"viewers", accessor}}},
@@ -494,7 +496,7 @@ func ChangeAccessor(c *gin.Context) {
 		if updateErr != nil {
 			msg := fmt.Sprintf("Could not add accessor to media")
 			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
-			fmt.Println(updateErr)
+			fmt.Println("Could not add accessor to media")
 			return
 		}
 		result = addResult
@@ -507,7 +509,7 @@ func ChangeAccessor(c *gin.Context) {
 		if updateErr != nil {
 			msg := fmt.Sprintf("Could not update media object")
 			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
-			fmt.Println(updateErr)
+			fmt.Println("Could not update media object")
 			return
 		}
 		result = deleteResult
@@ -524,7 +526,7 @@ func ChangeAccessor(c *gin.Context) {
 		if updateErr != nil {
 			msg := fmt.Sprintf("Could not remove accessor for user")
 			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
-			fmt.Println(updateErr)
+			fmt.Println("Could not remove accessor for user")
 			return
 		}
 	}
@@ -539,7 +541,7 @@ func ChangeAccessor(c *gin.Context) {
 		if updateErr != nil {
 			msg := fmt.Sprintf("Could not assign media to user")
 			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
-			fmt.Println(updateErr)
+			fmt.Println("Could not assign media to user")
 			return
 		}
 	}
