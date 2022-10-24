@@ -79,7 +79,7 @@ func main() {
 	router.Use(gin.Logger())
 
 	config := cors.DefaultConfig()
-	config.AllowHeaders = []string{"X-Auth-Token", "content-type", "authorization"}
+	config.AllowHeaders = []string{"X-Auth-Token", "content-type", "authorization", "Access-Control-Allow-Origin"}
 	config.ExposeHeaders = []string{"Content-Length"}
 	config.AllowOrigins = []string{"*"}
 
